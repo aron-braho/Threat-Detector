@@ -96,7 +96,7 @@ const Virus = ({ t }) => {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const response = await fetch('http://127.0.0.1:8000/virus', { method: 'POST', body: formData });
+      const response = await fetch('https://threat-detector-xz9q.onrender.com', { method: 'POST', body: formData });
       const data = await response.json();
       data.error ? setError("AI unavailable.") : setResult(data);
     } catch { setError("Connection failed."); }
