@@ -166,7 +166,7 @@ const Phishing = ({ t }) => {
                   <p className={`text-[100px] font-black tracking-tighter italic leading-none ${
                     result.risk_score > 60 ? 'text-rose-500' : 'text-cyan-400'
                   }`}>
-                    {result.verdict.toUpperCase()}
+                    {result?.verdict?.toUpperCase()}
                   </p>
                 </div>
               </div>
