@@ -18,7 +18,7 @@ load_dotenv()
 # ============================================================================
 
 # Get API key from .env file
-API_KEY = os.getenv("GEMINI_API_KEY_1")
+API_KEY = os.getenv("GEMINI_API_KEY_2")
 
 if not API_KEY or API_KEY == "your_key_here":
     print("\n❌ ERROR: GEMINI_API_KEY_4 not configured!")
@@ -192,10 +192,26 @@ Ktheje përgjigjen VETËM si JSON:
     try:
         # ✅ FIX: Use gemini-2.0-flash-exp (works with free tier)
         # Other options that work: "gemini-2.0-flash-exp", "gemini-pro", "gemini-1.5-pro"
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt
-        )
+        MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
+        response = None
+        for model in MODELS:
+            try:
+                response = client.models.generate_content(
+                    model=model,
+                    contents=prompt
+                )
+                break
+            except Exception as model_error:
+                if "429" in str(model_error) or "503" in str(model_error):
+                    continue
+                raise
+        
+        if response is None:
+            return {
+                "score": 0,
+                "shpjegimi": "Të gjitha modelet janë të paavailabël. Provoni më vonë.",
+                "verdikti": "I Dyshimtë"
+            }
         
         # Extract JSON from response
         match = re.search(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', response.text, re.DOTALL)
@@ -332,40 +348,41 @@ def phishing_text(request: AnalysisRequest):
 @app.post("/virus")
 async def scan_virus(file: UploadFile = File(...)):
     
-    # Read file content
+    # Lexo përmbajtjen e skedarit
     content = await file.read()
     file_size_kb = round(len(content) / 1024, 1)
     
-    # Check cache
+    # Kontrollo keshin
     cache_key = hashlib.md5(content).hexdigest()
     if cache_key in analysis_cache:
-        print(f"✓ Cache hit for: {cache_key}")
+        print(f"✓ Gjetje në kesh për: {cache_key}")
         return analysis_cache[cache_key]
     
-    # Try to decode for text-based analysis, fallback to hex sample
+    # Provo dekodimin për analizë teksti, përndryshe përdor mostër hex
     try:
         text_sample = content[:3000].decode("utf-8", errors="ignore")
     except:
         text_sample = content[:3000].hex()
 
-    prompt = f"""You are a malware analyst. Analyze this file for threats.
+    # Udhëzimi për AI tashmë është i gjithë në shqip
+    prompt = f"""Ti je një analist i specializuar për malware. Analizo këtë skedar për kërcënime të mundshme.
 
-File name: {file.filename}
-File size: {file_size_kb} KB
-File type: {file.content_type or 'unknown'}
-Content sample (first 3000 bytes): {text_sample}
+Emri i skedarit: {file.filename}
+Madhësia: {file_size_kb} KB
+Lloji: {file.content_type or 'unknown'}
+Mostra e përmbajtjes (3000 bajtet e para): {text_sample}
 
-Respond ONLY as JSON:
+Përgjigju VETËM në formatin JSON dhe përdor gjuhën SHQIPE për të gjitha vlerat tekstuale:
 {{
-  "score": number 0-100,
-  "verdict": "Clean" or "Suspicious" or "Malicious",
-  "threat_type": "None" or short threat name (e.g. "Trojan", "Ransomware", "Adware"),
-  "confidence": number 0-100,
-  "explanation": "2-4 sentences explaining findings.",
+  "score": numër 0-100,
+  "verdict": "I pastër" ose "I dyshimtë" ose "I dëmshëm",
+  "threat_type": "Asnjë" ose emër i shkurtër (p.sh. "Trojan", "Ransomware", "Adware"),
+  "confidence": numër 0-100,
+  "explanation": "2-4 fjali që shpjegojnë gjetjet në shqip.",
   "scan_metrics": [
-    {{"label": "Entropy", "percent": number, "color": "#f43f5e or #f59e0b or #10b981"}},
-    {{"label": "Obfuscation", "percent": number, "color": "#f43f5e or #f59e0b or #10b981"}},
-    {{"label": "Suspicious Strings", "percent": number, "color": "#f43f5e or #f59e0b or #10b981"}}
+    {{"label": "Entropia", "percent": numër, "color": "#f43f5e"}},
+    {{"label": "Obfuskimi", "percent": numër, "color": "#f59e0b"}},
+    {{"label": "Stringje të dyshimta", "percent": numër, "color": "#10b981"}}
   ],
   "file_info": {{
     "MD5": "{cache_key}",
@@ -375,37 +392,48 @@ Respond ONLY as JSON:
 }}"""
 
     try:
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt
-        )
+        MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
+        response = None
+        for model in MODELS:
+            try:
+                response = client.models.generate_content(
+                    model=model,
+                    contents=prompt
+                )
+                break
+            except Exception as model_error:
+                if "429" in str(model_error) or "503" in str(model_error):
+                    continue
+                raise
+        if response is None:
+            raise ValueError("Të gjitha modelet janë të paavailabël")
         match = re.search(r'\{.*\}', response.text, re.DOTALL)
         if match:
             data = json.loads(match.group(0))
             result = {
                 "risk_score":   int(data.get("score", 50)),
-                "verdict":      data.get("verdict", "Suspicious"),
-                "threat_type":  data.get("threat_type", "Unknown"),
+                "verdict":      data.get("verdict", "I dyshimtë"),
+                "threat_type":  data.get("threat_type", "I panjohur"),
                 "confidence":   int(data.get("confidence", 50)),
-                "explanation":  data.get("explanation", "Analysis complete."),
+                "explanation":  data.get("explanation", "Analiza përfundoi."),
                 "scan_metrics": data.get("scan_metrics", []),
                 "file_info":    data.get("file_info", {}),
             }
         else:
-            raise ValueError("No JSON in response")
+            raise ValueError("Nuk u gjet JSON në përgjigje")
 
     except Exception as e:
-        print(f"Virus scan error: {e}")
+        print(f"Gabim gjatë skanimit: {e}")
         result = {
             "risk_score": 0,
-            "verdict": "Suspicious",
-            "threat_type": "Unknown",
+            "verdict": "I dyshimtë",
+            "threat_type": "I panjohur",
             "confidence": 0,
-            "explanation": "AI model unavailable. Please retry in a moment.",
+            "explanation": "Modeli AI nuk është i disponueshëm. Ju lutem provoni përsëri pas pak.",
             "scan_metrics": [],
             "file_info": {"MD5": cache_key, "Size": f"{file_size_kb} KB"},
         }
 
     analysis_cache[cache_key] = result
-    print(f"✓ Virus scan cached: {cache_key} → {result['verdict']}")
+    print(f"✓ Skanimi u ruajt në kesh: {cache_key} → {result['verdict']}")
     return result

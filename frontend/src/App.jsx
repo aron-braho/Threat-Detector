@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
 import Phishing from './pages/Phishing';
+import Virus from './pages/Virus';
 import { translations } from './translations';
 
 function App() {
@@ -25,6 +26,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Dashboard t={t} />} />
             <Route path="/analyze" element={<Phishing t={t} />} />
+            <Route path="/virus" element={<Virus t={t} />} />
           </Routes>
         </div>
       </div>

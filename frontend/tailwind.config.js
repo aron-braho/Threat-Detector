@@ -7,8 +7,9 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        // Use this key in your AppStyles.js as 'font-space'
         space: ["'Space Grotesk'", "sans-serif"],
+        dm: ["'DM Sans'", "sans-serif"],
+        mono: ["'Space Mono'", "monospace"],
       },
     },
   },

@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { styles } from '../AppStyles';
 
-const RiskGauge = ({ value }) => {
+/* ─── Shared Risk Gauge ─── */
+const RiskGauge = ({ value, t }) => {
   const [displayValue, setDisplayValue] = useState(0);
 
   useEffect(() => {
     let start = 0;
-    const duration = 1500;
+    const duration = 1200;
     const increment = value / (duration / 10);
     const timer = setInterval(() => {
       start += increment;
@@ -20,42 +20,42 @@ const RiskGauge = ({ value }) => {
     return () => clearInterval(timer);
   }, [value]);
 
-  const color = value > 60 ? '#f43f5e' : '#10b981';
+  const color = value > 60 ? '#ff3366' : '#22d3ee';
 
   return (
-    <div className="relative flex items-center justify-center w-48 h-48">
-      <svg className="absolute w-full h-full transform -rotate-90">
-        <circle cx="96" cy="96" r="80" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-slate-800" />
+    <div className="relative flex items-center justify-center w-32 h-32 shrink-0">
+      <svg className="absolute w-full h-full -rotate-90">
+        <circle cx="64" cy="64" r="58" stroke="rgba(255,255,255,0.05)" strokeWidth="2" fill="transparent" />
         <circle
-          cx="96" cy="96" r="80" stroke={color} strokeWidth="8" fill="transparent"
-          strokeDasharray={502.4}
-          strokeDashoffset={502.4 - (502.4 * value) / 100}
-          className="transition-all duration-1000 ease-out"
-          strokeLinecap="round"
+          cx="64" cy="64" r="58" stroke={color} strokeWidth="2" fill="transparent"
+          strokeDasharray={364}
+          strokeDashoffset={364 - (364 * value) / 100}
+          className="transition-all duration-1000 cubic-bezier(0.2, 0.8, 0.2, 1)"
+          strokeLinecap="butt"
         />
       </svg>
       <div className="text-center">
-        <span className="text-5xl font-mono font-black tracking-tighter" style={{ color }}>
-          {displayValue}
+        <span className="text-3xl font-extralight tracking-tighter italic" style={{ color }}>
+          {displayValue}<span className="text-[10px] opacity-40 ml-0.5">/100</span>
         </span>
-        <div className="text-[10px] uppercase tracking-[0.3em] text-slate-500 mt-1 font-bold">Threat Level</div>
+        <div className="text-[8px] uppercase tracking-[0.2em] text-slate-500 mt-1 font-bold">
+          {t?.threatLevel}
+        </div>
       </div>
     </div>
   );
 };
 
-const Phishing = () => {
+const Phishing = ({ t }) => {
   const [text, setText] = useState('');
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [type, setType] = useState('sms');
-  const [error, setError] = useState(null);
 
   const handlephishing = async () => {
     if (!text) return;
     setLoading(true);
     setResult(null);
-    setError(null);
     try {
       const response = await fetch("http://127.0.0.1:8000/phishing", {
         method: "POST",
@@ -63,127 +63,138 @@ const Phishing = () => {
         body: JSON.stringify({ content: text, type: type }),
       });
       const data = await response.json();
-      if (data.error) {
-        setError("AI model unavailable. Please retry in a moment.");
-      } else {
-        setResult(data);
-      }
-    } catch (error) {
-      setError("Could not reach the server. Is the backend running?");
+      setResult(data);
+    } catch (e) { 
+      console.error("Connection severed:", e); 
     }
     setLoading(false);
   };
 
+  const resetAnalysis = () => {
+    setResult(null);
+    setText('');
+  };
+
   return (
-    /* Added h-full to the main container and a pt-20 to push the "center" down slightly */
-    <main className={`${styles.main} h-full flex flex-col pt-20 overflow-y-auto custom-scrollbar`}>
-      {/* WRAPPER: This centers the input card horizontally and vertically within the remaining space */}
-      {!result && (
-        <div className="flex-1 flex items-center justify-center -mt-20"> 
-          <div className={`${styles.inputCard} w-full`}>
-            <div className="flex gap-4 mb-8">
-              {['sms', 'email'].map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setType(t)}
-                  className={`flex-1 py-3 text-[11px] font-bold uppercase tracking-[0.2em] transition-all border ${
-                    type === t ? 'bg-white text-black border-white' : 'border-white/10 hover:border-white/40'
-                  }`}
-                >
-                  {t}
-                </button>
-              ))}
-            </div>
-
-            <textarea
-              className={styles.textarea}
-              placeholder={`Waiting for ${type} input raw data...`}
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-            />
-
-            <button
-              onClick={handlephishing}
-              disabled={loading}
-              className="w-full py-4 text-[11px] font-bold uppercase tracking-[0.2em] transition-all bg-cyan-500 hover:bg-cyan-400 text-black disabled:opacity-50 disabled:cursor-not-allowed rounded-sm mt-6"
-            >
-              {loading ? 'Scanning...' : 'Execute Analysis'}
-            </button>
-            {error && (
-              <p className="text-rose-500 text-[11px] uppercase tracking-widest mt-4 text-center">
-                ⚠ {error}
-              </p>
-            )}
-          </div>
+    <main className="h-full flex flex-col bg-[#0f172a] text-slate-200 font-space overflow-hidden">
+      
+      {/* ─── Header ─── */}
+      <div className="px-12 pt-14 pb-8 flex justify-between items-end border-b border-white/[0.03] shrink-0">
+        <div className="space-y-1">
+          <h2 className="text-[9px] uppercase tracking-[0.7em] text-cyan-400/50 font-black">
+            {t?.intelligentScanner}
+          </h2>
+          <p className="text-4xl font-extralight tracking-tight text-white leading-none">
+            {t?.detector} <span className="font-black italic text-cyan-400">{t?.phishing}</span>
+          </p>
         </div>
-      )}
+        
+        {!result ? (
+          <div className="flex bg-white/5 backdrop-blur-3xl p-1 rounded-2xl border border-white/10">
+            {['sms', 'email'].map((tabType) => (
+              <button
+                key={tabType}
+                onClick={() => setType(tabType)}
+                className={`px-8 py-2 text-[9px] uppercase tracking-widest font-black transition-all duration-500 rounded-xl ${
+                  type === tabType ? 'bg-white text-slate-900 shadow-xl' : 'text-slate-500 hover:text-white'
+                }`}
+              >
+                {t?.[tabType]}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <button 
+            onClick={resetAnalysis}
+            className="px-8 py-3 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all duration-300"
+          >
+            ← {t?.newAnalysis}
+          </button>
+        )}
+      </div>
 
-      {/* RESULTS SECTION - Renders below or instead of the input based on your preference */}
-      {result && (
-        <div className={`${styles.resultSection} mt-10`}>
-          <div className="grid grid-cols-5 gap-8 w-full items-stretch">
-            {/* ... (Keep your existing result section code here) ... */}
-            {/* LEFT: GAUGE - 2 cols */}
-            <div className="col-span-2 bg-white/[0.03] border border-white/10 rounded-2xl p-12 backdrop-blur-md flex flex-col items-center justify-center">
-              <h3 className="text-[10px] uppercase tracking-[0.4em] text-slate-500 mb-12 font-bold text-center">
-                Threat Assessment
-              </h3>
+      {/* ─── Viewport ─── */}
+      <div className="flex-1 flex items-center justify-center p-6 overflow-hidden">
+        
+        {/* VIEW 1: Compact Input Card */}
+        {!result && (
+          <div className="w-full max-w-md animate-in fade-in zoom-in-95 duration-700">
+            <div className="flex flex-col bg-white/[0.03] backdrop-blur-3xl rounded-[32px] border border-white/10 p-8 shadow-2xl relative overflow-hidden">
+              
+              <label className="text-[9px] uppercase tracking-[0.6em] text-slate-500 mb-6 font-black text-center">
+                {t?.payloadEntry}
+              </label>
 
-              <div className="transform scale-150">
-                <RiskGauge value={result.risk_score} />
+              <div className="relative group">
+                <textarea
+                  className="w-full h-48 bg-white/[0.01] border border-white/5 rounded-[20px] p-6 text-sm leading-relaxed focus:bg-white/[0.04] focus:border-cyan-500/30 outline-none transition-all resize-none placeholder:text-slate-800 italic font-light text-center"
+                  placeholder={t?.pasteContent ? `${t.pasteContent} ${type}...` : ""}
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                />
+                
+                <div className="absolute top-3 left-3 w-2 h-2 border-t border-l border-white/10" />
+                <div className="absolute bottom-3 right-3 w-2 h-2 border-b border-r border-white/10" />
               </div>
 
-              <div className={`flex items-center gap-2 px-4 py-2 rounded-full border mt-20 ${
-                result.risk_score > 60
-                  ? 'border-rose-500/20 bg-rose-500/10'
-                  : 'border-emerald-500/20 bg-emerald-500/10'
-              }`}>
-                <span className={`text-[10px] font-bold uppercase tracking-widest ${
-                  result.risk_score > 60 ? 'text-rose-500' : 'text-emerald-400'
-                }`}>
-                  {result.risk_score > 60 ? '⚠️ High Risk' : '✅ Low Risk'}
-                </span>
-              </div>
+              <button
+                onClick={handlephishing}
+                disabled={loading || !text}
+                className={`mt-8 py-4 rounded-[16px] text-[10px] font-black uppercase tracking-[0.5em] transition-all duration-500
+                  ${!text 
+                    ? 'bg-white/5 text-slate-600 border border-white/5 cursor-not-allowed' 
+                    : 'bg-white text-slate-900 hover:bg-cyan-400 hover:scale-[1.02] active:scale-95 shadow-lg'
+                  }`}
+              >
+                {loading ? t?.processing : t?.executeAudit}
+              </button>
             </div>
+          </div>
+        )}
 
-            {/* RIGHT: TEXT & INTELLIGENCE - 3 cols */}
-            <div className="col-span-3 bg-white/[0.03] border border-white/10 rounded-2xl p-12 backdrop-blur-md flex flex-col justify-start space-y-8">
-              <div>
-                <h3 className="text-[11px] uppercase tracking-[0.5em] text-cyan-500/50 mb-2 font-black italic">
-                  System Verdict
-                </h3>
-                <p className={`text-6xl font-black tracking-tighter ${
-                  result.risk_score > 60 ? 'text-rose-500' : 'text-emerald-400'
-                }`}>
-                  {result.verdict.toUpperCase()}
-                </p>
-              </div>
-
-              <div className="flex flex-col gap-4">
-                <h3 className="text-[11px] uppercase tracking-[0.5em] text-slate-500 font-bold">
-                  Intelligence Report
-                </h3>
-                <div className="bg-black/40 p-8 border-l-4 border-cyan-500 shadow-2xl rounded-r-xl">
-                  <ul className="space-y-6">
-                    {result.explanation.split('. ').map((point, index) => (
-                      point.trim() && (
-                        <li key={index} className="flex items-start gap-5 group">
-                          <span className="text-cyan-500 font-mono font-bold text-lg leading-none pt-1">
-                            [{index + 1}]
-                          </span>
-                          <p className="text-[16px] text-slate-200 leading-relaxed font-medium group-hover:text-white transition-colors">
-                            {point.trim()}{!point.endsWith('.') && '.'}
-                          </p>
-                        </li>
-                      )
-                    ))}
-                  </ul>
+        {/* VIEW 2: Results Display */}
+        {result && (
+          <div className="w-full max-w-5xl h-[85%] bg-white/[0.02] backdrop-blur-3xl rounded-[40px] border border-white/5 shadow-2xl flex flex-col animate-in fade-in slide-in-from-bottom-8 duration-1000 overflow-hidden">
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-12">
+              
+              <div className="flex items-center gap-12 mb-12 border-b border-white/[0.03] pb-12">
+                <RiskGauge value={result.risk_score} t={t} />
+                <div className="flex-1">
+                  <h3 className="text-[9px] uppercase tracking-[0.8em] text-slate-500 mb-3 font-black">
+                    {t?.heuristicResult}
+                  </h3>
+                  <p className={`text-[100px] font-black tracking-tighter italic leading-none ${
+                    result.risk_score > 60 ? 'text-rose-500' : 'text-cyan-400'
+                  }`}>
+                    {result.verdict.toUpperCase()}
+                  </p>
                 </div>
               </div>
+
+              <div className="space-y-10">
+                <h3 className="text-[9px] uppercase tracking-[0.6em] text-slate-500 font-black">
+                  {t?.analyticalFindings}
+                </h3>
+                <div className="grid gap-8">
+                  {result.explanation.split('. ').map((point, index) => (
+                    point.trim() && (
+                      <div key={index} className="flex gap-10 group">
+                        <span className="text-[10px] font-black text-white/10 group-hover:text-cyan-400 transition-colors pt-1">
+                          {index + 1} //
+                        </span>
+                        <p className="text-2xl text-slate-300 font-extralight leading-snug group-hover:text-white transition-colors">
+                          {point.trim()}.
+                        </p>
+                      </div>
+                    )
+                  ))}
+                </div>
+              </div>
+
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </main>
   );
 };
