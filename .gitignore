@@ -87,7 +87,7 @@ temp/
 *.bak
 *.tmp
 
-# API Keys and Secrets (extra safety)
+# API Keys and Secrets
 *_key.txt
 *_secret.txt
 credentials.json

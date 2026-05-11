@@ -10,25 +10,29 @@ AI-powered threat detection system for identifying phishing, spam, and other sec
 - 🎨 Modern UI with threat gauge
 - 🔐 Secure API management
 
-## Languages:
+## Languages
 
-- 🇦🇱 Albanian
+- 🇦🇱 Albanian (Shqip)
 
 ## Tech Stack
 
-- **Backend:** Python, FastAPI, Gemini API
-- **Frontend:** React, Tailwind CSS
+- **Backend:** Python 3.13, FastAPI, Google Gemini API
+- **Frontend:** React 18, Tailwind CSS
 
 ## Quick Start
 
+### Backend Setup
+
 ```bash
-# Backend
 cd backend
 pip install -r requirements.txt
-echo "GEMINI_API_KEY_2=your_key" > .env
+echo "GEMINI_API_KEY_2=your_key_here" > .env
 python3 -m uvicorn main:app --reload
+```
 
-# Frontend
+### Frontend Setup
+
+```bash
 cd frontend
 npm install
 npm run dev
@@ -36,12 +40,23 @@ npm run dev
 
 ## Risk Levels
 
-| Score  | Status     | Level |
-| ------ | ---------- | ----- |
-| 0-29   | Safe       | 🟢    |
-| 30-69  | Suspicious | 🟡    |
-| 70-100 | High Risk  | 🔴    |
+| Score  | Status         | Level |
+| ------ | -------------- | ----- |
+| 0-29   | I Sigurt       | 🟢    |
+| 30-69  | I Dyshimtë     | 🟡    |
+| 70-100 | Rrezik i Lartë | 🔴    |
+
+## API Endpoints
+
+- `GET /` - Health check
+- `POST /analyze` - Analyze message for threats
+
+## Future Threats
+
+- Malware detection
+- Social engineering analysis
+- Custom threat rules
 
 ## License
 
-MIT
+MIT License - Free for personal and commercial use
