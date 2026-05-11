@@ -57,7 +57,7 @@ const Phishing = ({ t }) => {
     setLoading(true);
     setResult(null);
     try {
-      const response = await fetch("https://threat-detector-xz9q.onrender.com", {
+      const response = await fetch("https://threat-detector-xz9q.onrender.com/phishing", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: text, type: type }),
