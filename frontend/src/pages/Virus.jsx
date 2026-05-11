@@ -1,17 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-/* ─── Shared Risk Gauge (Përshtatur me stilin e ri) ─── */
+/* ─── Shared Risk Gauge ─── */
 const RiskGauge = ({ value, t }) => {
   const [displayValue, setDisplayValue] = useState(0);
 
   useEffect(() => {
     let start = 0;
     const duration = 1500;
-    const increment = value / (duration / 10);
+    const increment = (value || 0) / (duration / 10);
     const timer = setInterval(() => {
       start += increment;
-      if (start >= value) {
-        setDisplayValue(value);
+      if (start >= (value || 0)) {
+        setDisplayValue(value || 0);
         clearInterval(timer);
       } else {
         setDisplayValue(Math.floor(start));
@@ -29,7 +29,7 @@ const RiskGauge = ({ value, t }) => {
         <circle
           cx="80" cy="80" r="72" stroke={color} strokeWidth="2" fill="transparent"
           strokeDasharray={452}
-          strokeDashoffset={452 - (452 * value) / 100}
+          strokeDashoffset={452 - (452 * (value || 0)) / 100}
           className="transition-all duration-1000 cubic-bezier(0.2, 0.8, 0.2, 1)"
         />
       </svg>
@@ -38,7 +38,7 @@ const RiskGauge = ({ value, t }) => {
           {displayValue}<span className="text-[12px] opacity-40 ml-0.5">/100</span>
         </span>
         <div className="text-[9px] uppercase tracking-[0.2em] text-slate-500 mt-1 font-black">
-          {t?.threatLevel}
+          {t?.threatLevel || "RISK LEVEL"}
         </div>
       </div>
     </div>
@@ -96,10 +96,25 @@ const Virus = ({ t }) => {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const response = await fetch('https://threat-detector-xz9q.onrender.com/virus', { method: 'POST', body: formData });
+      
+      const response = await fetch('https://threat-detector-xz9q.onrender.com/virus', { 
+        method: 'POST', 
+        body: formData 
+      });
+
+      if (!response.ok) throw new Error("Server Error");
+
       const data = await response.json();
-      data.error ? setError("AI unavailable.") : setResult(data);
-    } catch { setError("Connection failed."); }
+      setResult(data);
+    } catch (err) {
+      console.error(err);
+      setError("Connection failed.");
+      setResult({
+        risk_score: 0,
+        verdict: "GABIM LIDHJEJE",
+        explanation: "Serveri Render nuk u përgjigj. Sigurohu që Backend-i është 'Live'."
+      });
+    }
     setLoading(false);
   };
 
@@ -122,7 +137,7 @@ const Virus = ({ t }) => {
             onClick={() => {setResult(null); setFile(null);}}
             className="px-8 py-3 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all duration-300"
           >
-            ← {t?.newAnalysis}
+            ← {t?.newAnalysis || "New Scan"}
           </button>
         )}
       </div>
@@ -169,12 +184,12 @@ const Virus = ({ t }) => {
                 onClick={handleAnalyze}
                 disabled={loading || !file}
                 className={`w-full py-5 rounded-[18px] text-[11px] font-black uppercase tracking-[0.5em] transition-all duration-500
-                  ${!file 
+                  ${!file || loading 
                     ? 'bg-white/5 text-slate-600 border border-white/5 cursor-not-allowed' 
                     : 'bg-white text-slate-900 hover:bg-cyan-400 hover:scale-[1.01] shadow-xl'
                   }`}
               >
-                {loading ? t?.scanning : (t?.executeAnalysis || "Initialize Scan")}
+                {loading ? (t?.scanning || "SCANNING...") : (t?.executeAnalysis || "Initialize Scan")}
               </button>
 
               {loading && (
@@ -193,28 +208,28 @@ const Virus = ({ t }) => {
 
         {result && (
           <div className="w-full max-w-6xl h-[85%] bg-white/[0.02] backdrop-blur-3xl rounded-[40px] border border-white/5 shadow-2xl flex flex-col animate-in fade-in slide-in-from-bottom-8 duration-1000 overflow-hidden relative z-10">
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-12">
+            <div className="flex-1 overflow-y-auto p-12">
               
               <div className="flex items-center gap-16 mb-16 border-b border-white/[0.03] pb-16">
-                <RiskGauge value={result.risk_score} t={t} />
+                <RiskGauge value={result?.risk_score} t={t} />
                 <div className="flex-1">
                   <h3 className="text-[10px] uppercase tracking-[0.8em] text-slate-500 mb-4 font-black">
                     {t?.heuristicResult || "Engine Verdict"}
                   </h3>
                   <p className={`text-[100px] font-black tracking-tighter italic leading-none ${
-                    result.risk_score > 60 ? 'text-rose-500' : 'text-emerald-400'
+                    (result?.risk_score || 0) > 60 ? 'text-rose-500' : 'text-emerald-400'
                   }`}>
-                    {result?.verdict?.toUpperCase()}
+                    {result?.verdict?.toUpperCase() || "PENDING"}
                   </p>
                 </div>
               </div>
 
               <div className="space-y-12">
                 <h3 className="text-[10px] uppercase tracking-[0.6em] text-slate-500 font-black">
-                  {t?.analyticalFindings}
+                  {t?.analyticalFindings || "FINDINGS"}
                 </h3>
                 <div className="grid gap-10">
-                  {result.explanation.split('. ').map((point, index) => (
+                  {result?.explanation ? result.explanation.split('. ').map((point, index) => (
                     point.trim() && (
                       <div key={index} className="flex gap-12 group">
                         <span className="text-[11px] font-black text-white/10 group-hover:text-cyan-400 transition-colors pt-1">
@@ -225,7 +240,9 @@ const Virus = ({ t }) => {
                         </p>
                       </div>
                     )
-                  ))}
+                  )) : (
+                    <p className="text-slate-500 italic">Analiza nuk mund të gjenerohet.</p>
+                  )}
                 </div>
               </div>
 
