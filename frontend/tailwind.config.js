@@ -5,7 +5,12 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        // Use this key in your AppStyles.js as 'font-space'
+        space: ["'Space Grotesk'", "sans-serif"],
+      },
+    },
   },
   plugins: [],
 }

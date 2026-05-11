@@ -3,7 +3,7 @@ import os
 import json
 import hashlib
 from datetime import datetime
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from urllib.parse import urlparse
@@ -18,12 +18,11 @@ load_dotenv()
 # ============================================================================
 
 # Get API key from .env file
-API_KEY = os.getenv("GEMINI_API_KEY_3")
+API_KEY = os.getenv("GEMINI_API_KEY_1")
 
 if not API_KEY or API_KEY == "your_key_here":
     print("\n❌ ERROR: GEMINI_API_KEY_4 not configured!")
     print("   Create a .env file in your backend directory with:")
-    print("   GEMINI_API_KEY_4= AIzaSyCXTVHIyCWBioY2mq6NtfPMcJqdkjOFleU\n")
     API_KEY = "placeholder"
 
 # Initialize Gemini API client
@@ -328,4 +327,85 @@ def phishing_text(request: AnalysisRequest):
     print(f"✓ Cached result for: {cache_key}")
     print(f"  Score: {result['risk_score']}, Verdict: {result['verdict']}")
     
+    return result
+
+@app.post("/virus")
+async def scan_virus(file: UploadFile = File(...)):
+    
+    # Read file content
+    content = await file.read()
+    file_size_kb = round(len(content) / 1024, 1)
+    
+    # Check cache
+    cache_key = hashlib.md5(content).hexdigest()
+    if cache_key in analysis_cache:
+        print(f"✓ Cache hit for: {cache_key}")
+        return analysis_cache[cache_key]
+    
+    # Try to decode for text-based analysis, fallback to hex sample
+    try:
+        text_sample = content[:3000].decode("utf-8", errors="ignore")
+    except:
+        text_sample = content[:3000].hex()
+
+    prompt = f"""You are a malware analyst. Analyze this file for threats.
+
+File name: {file.filename}
+File size: {file_size_kb} KB
+File type: {file.content_type or 'unknown'}
+Content sample (first 3000 bytes): {text_sample}
+
+Respond ONLY as JSON:
+{{
+  "score": number 0-100,
+  "verdict": "Clean" or "Suspicious" or "Malicious",
+  "threat_type": "None" or short threat name (e.g. "Trojan", "Ransomware", "Adware"),
+  "confidence": number 0-100,
+  "explanation": "2-4 sentences explaining findings.",
+  "scan_metrics": [
+    {{"label": "Entropy", "percent": number, "color": "#f43f5e or #f59e0b or #10b981"}},
+    {{"label": "Obfuscation", "percent": number, "color": "#f43f5e or #f59e0b or #10b981"}},
+    {{"label": "Suspicious Strings", "percent": number, "color": "#f43f5e or #f59e0b or #10b981"}}
+  ],
+  "file_info": {{
+    "MD5": "{cache_key}",
+    "Size": "{file_size_kb} KB",
+    "Type": "{file.content_type or 'unknown'}"
+  }}
+}}"""
+
+    try:
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt
+        )
+        match = re.search(r'\{.*\}', response.text, re.DOTALL)
+        if match:
+            data = json.loads(match.group(0))
+            result = {
+                "risk_score":   int(data.get("score", 50)),
+                "verdict":      data.get("verdict", "Suspicious"),
+                "threat_type":  data.get("threat_type", "Unknown"),
+                "confidence":   int(data.get("confidence", 50)),
+                "explanation":  data.get("explanation", "Analysis complete."),
+                "scan_metrics": data.get("scan_metrics", []),
+                "file_info":    data.get("file_info", {}),
+            }
+        else:
+            raise ValueError("No JSON in response")
+
+    except Exception as e:
+        print(f"Virus scan error: {e}")
+        result = {
+            "risk_score": 0,
+            "verdict": "Suspicious",
+            "threat_type": "Unknown",
+            "confidence": 0,
+            "explanation": "AI model unavailable. Please retry in a moment.",
+            "scan_metrics": [],
+            "file_info": {"MD5": cache_key, "Size": f"{file_size_kb} KB"},
+        }
+
+    analysis_cache[cache_key] = result
+    print(f"✓ Virus scan cached: {cache_key} → {result['verdict']}")
     return result

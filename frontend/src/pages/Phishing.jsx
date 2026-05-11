@@ -55,7 +55,7 @@ const Phishing = () => {
     if (!text) return;
     setLoading(true);
     setResult(null);
-    setError(null);           // ← clear previous error
+    setError(null);
     try {
       const response = await fetch("http://127.0.0.1:8000/phishing", {
         method: "POST",
@@ -75,50 +75,54 @@ const Phishing = () => {
   };
 
   return (
-    <main className={styles.main}>
+    /* Added h-full to the main container and a pt-20 to push the "center" down slightly */
+    <main className={`${styles.main} h-full flex flex-col pt-20 overflow-y-auto custom-scrollbar`}>
+      {/* WRAPPER: This centers the input card horizontally and vertically within the remaining space */}
+      {!result && (
+        <div className="flex-1 flex items-center justify-center -mt-20"> 
+          <div className={`${styles.inputCard} w-full`}>
+            <div className="flex gap-4 mb-8">
+              {['sms', 'email'].map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setType(t)}
+                  className={`flex-1 py-3 text-[11px] font-bold uppercase tracking-[0.2em] transition-all border ${
+                    type === t ? 'bg-white text-black border-white' : 'border-white/10 hover:border-white/40'
+                  }`}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
 
-      {/* INPUT CARD */}
-      <div className={styles.inputCard}>
-        <div className="flex gap-4 mb-8">
-          {['sms', 'email'].map((t) => (
+            <textarea
+              className={styles.textarea}
+              placeholder={`Waiting for ${type} input raw data...`}
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+            />
+
             <button
-              key={t}
-              onClick={() => setType(t)}
-              className={`flex-1 py-3 text-[11px] font-bold uppercase tracking-[0.2em] transition-all border ${
-                type === t ? 'bg-white text-black border-white' : 'border-white/10 hover:border-white/40'
-              }`}
+              onClick={handlephishing}
+              disabled={loading}
+              className="w-full py-4 text-[11px] font-bold uppercase tracking-[0.2em] transition-all bg-cyan-500 hover:bg-cyan-400 text-black disabled:opacity-50 disabled:cursor-not-allowed rounded-sm mt-6"
             >
-              {t}
+              {loading ? 'Scanning...' : 'Execute Analysis'}
             </button>
-          ))}
+            {error && (
+              <p className="text-rose-500 text-[11px] uppercase tracking-widest mt-4 text-center">
+                ⚠ {error}
+              </p>
+            )}
+          </div>
         </div>
+      )}
 
-        <textarea
-          className={styles.textarea}
-          placeholder={`Waiting for ${type} input raw data...`}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-        />
-
-        <button
-          onClick={handlephishing}
-          disabled={loading}
-          className="w-full py-4 text-[11px] font-bold uppercase tracking-[0.2em] transition-all bg-cyan-500 hover:bg-cyan-400 text-black disabled:opacity-50 disabled:cursor-not-allowed rounded-sm mt-6"
-        >
-          {loading ? 'Scanning...' : 'Execute Analysis'}
-        </button>
-        {error && (
-            <p className="text-rose-500 text-[11px] uppercase tracking-widest mt-4 text-center">
-              ⚠ {error}
-            </p>
-          )}
-      </div>
-
-      {/* RESULTS SECTION */}
+      {/* RESULTS SECTION - Renders below or instead of the input based on your preference */}
       {result && (
-        <div className={styles.resultSection}>
+        <div className={`${styles.resultSection} mt-10`}>
           <div className="grid grid-cols-5 gap-8 w-full items-stretch">
-
+            {/* ... (Keep your existing result section code here) ... */}
             {/* LEFT: GAUGE - 2 cols */}
             <div className="col-span-2 bg-white/[0.03] border border-white/10 rounded-2xl p-12 backdrop-blur-md flex flex-col items-center justify-center">
               <h3 className="text-[10px] uppercase tracking-[0.4em] text-slate-500 mb-12 font-bold text-center">
@@ -144,8 +148,6 @@ const Phishing = () => {
 
             {/* RIGHT: TEXT & INTELLIGENCE - 3 cols */}
             <div className="col-span-3 bg-white/[0.03] border border-white/10 rounded-2xl p-12 backdrop-blur-md flex flex-col justify-start space-y-8">
-
-              {/* Verdict */}
               <div>
                 <h3 className="text-[11px] uppercase tracking-[0.5em] text-cyan-500/50 mb-2 font-black italic">
                   System Verdict
@@ -157,7 +159,6 @@ const Phishing = () => {
                 </p>
               </div>
 
-              {/* Intelligence Report */}
               <div className="flex flex-col gap-4">
                 <h3 className="text-[11px] uppercase tracking-[0.5em] text-slate-500 font-bold">
                   Intelligence Report
@@ -179,12 +180,10 @@ const Phishing = () => {
                   </ul>
                 </div>
               </div>
-
             </div>
           </div>
         </div>
       )}
-
     </main>
   );
 };
