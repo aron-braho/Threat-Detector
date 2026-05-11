@@ -121,9 +121,9 @@ def get_cache_key(text, context_type):
     return hashlib.md5(content.encode()).hexdigest()
 
 
-def analyze_links(text):
+def phishing_links(text):
     """
-    Analyze URLs in the text for suspicious characteristics.
+    phishing URLs in the text for suspicious characteristics.
     Returns: (link_score, link_reports, is_whitelisted)
     """
     url_pattern = r'https?://[^\s<>"]+'
@@ -258,7 +258,7 @@ Ktheje përgjigjen VETËM si JSON:
 # ============================================================================
 
 class AnalysisRequest(BaseModel):
-    content: str  # The text to analyze
+    content: str  # The text to phishing
     type: str     # Either 'sms' or 'email'
 
 
@@ -272,11 +272,11 @@ def home():
     return {"message": "Mburoja API is running!"}
 
 
-@app.post("/analyze")
-def analyze_text(request: AnalysisRequest):
+@app.post("/phishing")
+def phishing_text(request: AnalysisRequest):
     """
     Main analysis endpoint.
-    Analyzes text for phishing threats and returns risk score + verdict.
+    phishings text for phishing threats and returns risk score + verdict.
     """
     
     # ===== STEP 1: Check cache =====
@@ -285,8 +285,8 @@ def analyze_text(request: AnalysisRequest):
         print(f"✓ Cache hit for: {cache_key}")
         return analysis_cache[cache_key]
     
-    # ===== STEP 2: Analyze links and AI =====
-    link_score, link_issues, is_whitelisted = analyze_links(request.content)
+    # ===== STEP 2: phishing links and AI =====
+    link_score, link_issues, is_whitelisted = phishing_links(request.content)
     ai_result = get_ai_analysis(request.content, request.type)
     
     ai_score = ai_result.get('score', 0)

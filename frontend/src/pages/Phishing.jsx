@@ -50,12 +50,12 @@ const Phishing = () => {
   const [loading, setLoading] = useState(false);
   const [type, setType] = useState('sms');
 
-  const handleAnalyze = async () => {
+  const handlephishing = async () => {
     if (!text) return;
     setLoading(true);
     setResult(null);
     try {
-      const response = await fetch("http://127.0.0.1:8000/analyze", {
+      const response = await fetch("http://127.0.0.1:8000/phishing", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: text, type: type }),
@@ -94,9 +94,9 @@ const Phishing = () => {
         />
 
         <button 
-          onClick={handleAnalyze} 
+          onClick={handlephishing} 
           disabled={loading} 
-          className={styles.analyzeBtn}
+          className={styles.phishingBtn}
         >
           {loading ? 'Scanning...' : 'Execute Analysis'}
         </button>
