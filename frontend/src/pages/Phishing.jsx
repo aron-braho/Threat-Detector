@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { styles } from '../AppStyles'; 
+import { styles } from '../AppStyles';
 
 const RiskGauge = ({ value }) => {
   const [displayValue, setDisplayValue] = useState(0);
@@ -49,11 +49,13 @@ const Phishing = () => {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [type, setType] = useState('sms');
+  const [error, setError] = useState(null);
 
   const handlephishing = async () => {
     if (!text) return;
     setLoading(true);
     setResult(null);
+    setError(null);           // ← clear previous error
     try {
       const response = await fetch("http://127.0.0.1:8000/phishing", {
         method: "POST",
@@ -61,21 +63,26 @@ const Phishing = () => {
         body: JSON.stringify({ content: text, type: type }),
       });
       const data = await response.json();
-      setResult(data);
+      if (data.error) {
+        setError("AI model unavailable. Please retry in a moment.");
+      } else {
+        setResult(data);
+      }
     } catch (error) {
-      console.error("Error:", error);
+      setError("Could not reach the server. Is the backend running?");
     }
     setLoading(false);
   };
 
   return (
     <main className={styles.main}>
+
       {/* INPUT CARD */}
       <div className={styles.inputCard}>
         <div className="flex gap-4 mb-8">
           {['sms', 'email'].map((t) => (
-            <button 
-              key={t} 
+            <button
+              key={t}
               onClick={() => setType(t)}
               className={`flex-1 py-3 text-[11px] font-bold uppercase tracking-[0.2em] transition-all border ${
                 type === t ? 'bg-white text-black border-white' : 'border-white/10 hover:border-white/40'
@@ -86,63 +93,83 @@ const Phishing = () => {
           ))}
         </div>
 
-        <textarea 
-          className={styles.textarea} 
-          placeholder={`Waiting for ${type} input raw data...`} 
-          value={text} 
-          onChange={(e) => setText(e.target.value)} 
+        <textarea
+          className={styles.textarea}
+          placeholder={`Waiting for ${type} input raw data...`}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
         />
 
-        <button 
-          onClick={handlephishing} 
-          disabled={loading} 
-          className={styles.phishingBtn}
+        <button
+          onClick={handlephishing}
+          disabled={loading}
+          className="w-full py-4 text-[11px] font-bold uppercase tracking-[0.2em] transition-all bg-cyan-500 hover:bg-cyan-400 text-black disabled:opacity-50 disabled:cursor-not-allowed rounded-sm mt-6"
         >
           {loading ? 'Scanning...' : 'Execute Analysis'}
         </button>
+        {error && (
+            <p className="text-rose-500 text-[11px] uppercase tracking-widest mt-4 text-center">
+              ⚠ {error}
+            </p>
+          )}
       </div>
 
-      
-      {/* RESULTS SECTION - SEPARATED LAYOUT */}
+      {/* RESULTS SECTION */}
       {result && (
         <div className={styles.resultSection}>
-          <div className="grid grid-cols-3 gap-8 w-full items-stretch">
-            
-            {/* LEFT SECTION: WHEEL ONLY - 1 column */}
-            <div className="col-span-1 bg-white/[0.03] border border-white/10 rounded-2xl p-12 backdrop-blur-md flex flex-col items-center justify-center">
-              <h3 className="text-[10px] uppercase tracking-[0.4em] text-slate-500 mb-12 font-bold text-center">Threat Assessment</h3>
-              
-              <div className="transform scale-100">
+          <div className="grid grid-cols-5 gap-8 w-full items-stretch">
+
+            {/* LEFT: GAUGE - 2 cols */}
+            <div className="col-span-2 bg-white/[0.03] border border-white/10 rounded-2xl p-12 backdrop-blur-md flex flex-col items-center justify-center">
+              <h3 className="text-[10px] uppercase tracking-[0.4em] text-slate-500 mb-12 font-bold text-center">
+                Threat Assessment
+              </h3>
+
+              <div className="transform scale-150">
                 <RiskGauge value={result.risk_score} />
               </div>
-              
-              <div className={`flex items-center gap-2 px-4 py-2 rounded-full border mt-12 ${result.risk_score > 60 ? 'border-rose-500/20 bg-rose-500/10' : 'border-emerald-500/20 bg-emerald-500/10'}`}>
-                <span className={`text-[10px] font-bold uppercase tracking-widest ${result.risk_score > 60 ? 'text-rose-500' : 'text-emerald-400'}`}>
+
+              <div className={`flex items-center gap-2 px-4 py-2 rounded-full border mt-20 ${
+                result.risk_score > 60
+                  ? 'border-rose-500/20 bg-rose-500/10'
+                  : 'border-emerald-500/20 bg-emerald-500/10'
+              }`}>
+                <span className={`text-[10px] font-bold uppercase tracking-widest ${
+                  result.risk_score > 60 ? 'text-rose-500' : 'text-emerald-400'
+                }`}>
                   {result.risk_score > 60 ? '⚠️ High Risk' : '✅ Low Risk'}
                 </span>
               </div>
             </div>
 
-            {/* RIGHT SECTION: TEXT & INTELLIGENCE - 2 columns (BIGGER) */}
-            <div className="col-span-2 bg-white/[0.03] border border-white/10 rounded-2xl p-12 backdrop-blur-md flex flex-col justify-start space-y-8">
-              
+            {/* RIGHT: TEXT & INTELLIGENCE - 3 cols */}
+            <div className="col-span-3 bg-white/[0.03] border border-white/10 rounded-2xl p-12 backdrop-blur-md flex flex-col justify-start space-y-8">
+
               {/* Verdict */}
               <div>
-                <h3 className="text-[11px] uppercase tracking-[0.5em] text-cyan-500/50 mb-2 font-black italic">System Verdict</h3>
-                <p className={`text-6xl font-black tracking-tighter ${result.risk_score > 60 ? 'text-rose-500' : 'text-emerald-400'}`}>
+                <h3 className="text-[11px] uppercase tracking-[0.5em] text-cyan-500/50 mb-2 font-black italic">
+                  System Verdict
+                </h3>
+                <p className={`text-6xl font-black tracking-tighter ${
+                  result.risk_score > 60 ? 'text-rose-500' : 'text-emerald-400'
+                }`}>
                   {result.verdict.toUpperCase()}
                 </p>
               </div>
 
               {/* Intelligence Report */}
               <div className="flex flex-col gap-4">
-                <h3 className="text-[11px] uppercase tracking-[0.5em] text-slate-500 font-bold">Intelligence Report</h3>
+                <h3 className="text-[11px] uppercase tracking-[0.5em] text-slate-500 font-bold">
+                  Intelligence Report
+                </h3>
                 <div className="bg-black/40 p-8 border-l-4 border-cyan-500 shadow-2xl rounded-r-xl">
                   <ul className="space-y-6">
                     {result.explanation.split('. ').map((point, index) => (
                       point.trim() && (
                         <li key={index} className="flex items-start gap-5 group">
-                          <span className="text-cyan-500 font-mono font-bold text-lg leading-none pt-1">[{index + 1}]</span>
+                          <span className="text-cyan-500 font-mono font-bold text-lg leading-none pt-1">
+                            [{index + 1}]
+                          </span>
                           <p className="text-[16px] text-slate-200 leading-relaxed font-medium group-hover:text-white transition-colors">
                             {point.trim()}{!point.endsWith('.') && '.'}
                           </p>
@@ -152,10 +179,12 @@ const Phishing = () => {
                   </ul>
                 </div>
               </div>
+
             </div>
           </div>
         </div>
       )}
+
     </main>
   );
 };

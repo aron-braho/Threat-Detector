@@ -18,12 +18,12 @@ load_dotenv()
 # ============================================================================
 
 # Get API key from .env file
-API_KEY = os.getenv("GEMINI_API_KEY_2")
+API_KEY = os.getenv("GEMINI_API_KEY_3")
 
 if not API_KEY or API_KEY == "your_key_here":
-    print("\n❌ ERROR: GEMINI_API_KEY_2 not configured!")
+    print("\n❌ ERROR: GEMINI_API_KEY_4 not configured!")
     print("   Create a .env file in your backend directory with:")
-    print("   GEMINI_API_KEY_2=sk-proj-your-actual-key-here\n")
+    print("   GEMINI_API_KEY_4= AIzaSyCXTVHIyCWBioY2mq6NtfPMcJqdkjOFleU\n")
     API_KEY = "placeholder"
 
 # Initialize Gemini API client
