@@ -128,7 +128,7 @@ const Virus = ({ t }) => {
             {t?.intelligentScanner || "Intelligent Scanner"}
           </h2>
           <p className="text-4xl font-extralight tracking-tight text-white leading-none uppercase">
-             {t?.virusScan || "Virus"} <span className="font-black italic text-cyan-400">{t?.Scanner || "Scanner"}</span>
+             {t?.virusScan || "Virus"} <span className="font-black italic text-cyan-400"></span>
           </p>
         </div>
         
