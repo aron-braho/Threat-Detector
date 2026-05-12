@@ -31,7 +31,7 @@ export const translations = {
     lowRisk: "✅ Low Risk",
     //Virus
     dropFile: "Drop file here or click to browse",
-    virusScan: "VIRUS SCAN",
+    virusScanner: "VIRUS SCANNER",
     deepScan: "Deep static + heuristic analysis",
     intelligentScanner: "Intelligent Scanner",
     payload: "Payload",
@@ -78,7 +78,7 @@ export const translations = {
     lowRisk: "✅ Rrezik i Ulët",
     //Virus
     dropFile: "Lëshoni skedarin këtu ose klikoni për të kërkuar",
-    virusScan: "SKANIM VIRUSESH",
+    virusScanner: "SKANER VIRUSESH",
     deepScan: "Analizë e thellë statike + heuristike",
     intelligentScanner: "Skaner Inteligjent",
     payload: "Payload",
