@@ -307,10 +307,10 @@ def phishing_text(request: AnalysisRequest):
     ai_score = ai_result.get('score', 0)
     
     # ===== STEP 3: Calculate final score =====
-    if ai_score > 60:
-        final_score = ai_score
-    elif is_whitelisted:
+    if is_whitelisted:
         final_score = max(0, ai_score - 30)
+    elif ai_score > 60:
+        final_score = ai_score
     else:
         final_score = max(link_score, ai_score)
 
